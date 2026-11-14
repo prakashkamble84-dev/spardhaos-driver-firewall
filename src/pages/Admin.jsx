@@ -25,6 +25,7 @@ const SECTIONS = [
   { to: '/exam-alerts', label: 'Exam alerts', icon: 'Bell' },
   { to: '/admin-feedback', label: 'Feedback inbox', icon: 'Inbox' },
   { to: '/business-intelligence', label: 'Business intelligence', icon: 'TrendingUp' },
+  { to: '/admin-automation', label: 'Automation and alerts', icon: 'Zap' },
 ];
 
 async function countRows(table) {
