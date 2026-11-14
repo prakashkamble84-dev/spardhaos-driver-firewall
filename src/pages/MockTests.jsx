@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFetch } from '@/hooks/useFetch';
 import { sdk } from '@/services/sdk';
 import ApperIcon from '@/components/ApperIcon';
@@ -45,6 +45,13 @@ function getCorrectIndex(question, options) {
   return Number.isInteger(numeric) && numeric >= 0 && numeric < options.length ? numeric : -1;
 }
 
+function formatCountdown(ms) {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 export default function MockTests() {
   const { data, loading, error, run } = useFetch(fetchTests, []);
   const [startingId, setStartingId] = useState('');
@@ -54,11 +61,15 @@ export default function MockTests() {
   const [selected, setSelected] = useState({});
   const [answers, setAnswers] = useState({});
   const [saving, setSaving] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   const questions = session?.questions ?? [];
   const question = questions[index];
   const options = question ? parseOptions(question.options_c) : [];
   const correctIndex = question ? getCorrectIndex(question, options) : -1;
+  const endsAt = session?.endsAt ?? null;
+  const timeLeftMs = endsAt ? Math.max(0, endsAt - now) : null;
+  const autoSubmitted = useRef(false);
 
   async function start(test) {
     setStartingId(test.Id);
@@ -96,9 +107,13 @@ export default function MockTests() {
         throw new Error(attemptResult.messages?.[0] || 'चाचणी सत्र सुरू झाले नाही.');
       }
 
+      const startedMs = Date.now();
+      autoSubmitted.current = false;
+      setNow(startedMs);
       setSession({
         test,
         attempt: attemptResult.data[0],
+        endsAt: Number(test.duration_minutes_c) > 0 ? startedMs + Number(test.duration_minutes_c) * 60000 : null,
         questions: questionResult.data.slice(0, Number(test.total_questions_c) || questionResult.data.length),
       });
       setIndex(0);
@@ -184,6 +199,19 @@ export default function MockTests() {
     }
   }
 
+  useEffect(() => {
+    if (!endsAt) return undefined;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [endsAt]);
+
+  useEffect(() => {
+    if (endsAt && timeLeftMs === 0 && !autoSubmitted.current && !saving) {
+      autoSubmitted.current = true;
+      finish();
+    }
+  });
+
   if (session && question) {
     const isAnswered = Object.prototype.hasOwnProperty.call(answers, question.Id);
 
@@ -192,7 +220,14 @@ export default function MockTests() {
         <div>
           <p className="text-sm font-semibold text-primary">{session.test.Name}</p>
           <h1 className="mt-1 text-3xl font-semibold">मॉक टेस्ट सुरू आहे</h1>
-          <p className="mt-2 text-sm text-muted-foreground">प्रश्न {index + 1} / {questions.length}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <span>प्रश्न {index + 1} / {questions.length}</span>
+            {timeLeftMs !== null && (
+              <span className={`font-semibold tabular-nums ${timeLeftMs <= 300000 ? 'text-destructive' : 'text-foreground'}`}>
+                वेळ शिल्लक {formatCountdown(timeLeftMs)}
+              </span>
+            )}
+          </div>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-secondary">
           <div className="h-full rounded-full bg-primary" style={{ width: `${(index + 1) / questions.length * 100}%` }} />
