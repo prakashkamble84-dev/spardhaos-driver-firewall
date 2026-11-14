@@ -1,63 +1,75 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useOwnerLayoutData } from '@/hooks/useOwnerLayoutData';
-import { APP_CONFIG } from '@/config/app.config';
-import { cn } from '@/lib/utils';
-import ApperIcon from '@/components/ApperIcon';
 import UserMenu from '@/components/UserMenu';
-import { ErrorBoundary } from '@/components/ui/error-boundary';
+import ApperIcon from '@/components/ApperIcon';
+import { cn } from '@/lib/utils';
 
-/**
- * Placeholder owner shell — a plain top bar so the app is navigable before it is designed.
- * Overwrite it with the app's own shell (Platform Contract §12). Whatever the shape, keep
- * the parts: nav from useOwnerLayoutData(), UserMenu once, the page through <Outlet /> in
- * <main>. This is a layout route: it receives no `children` prop.
- */
 export default function OwnerLayout() {
-  const { user, logout, homeRoute, navItems, navGroups, initials, displayName, counts } = useOwnerLayoutData();
-  const grouped = navGroups.length ? navGroups : [{ label: null, items: navItems }];
-  const [navOpen, setNavOpen] = useState(false);
-
-  const nav = grouped.map((g, i) => (
-    <div key={g.label ?? `g-${i}`} className="flex flex-wrap items-center gap-1">
-      {g.label && <span className="px-2 text-xs uppercase tracking-wide text-muted-foreground">{g.label}</span>}
-      {g.items.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === '/'}
-          onClick={() => setNavOpen(false)}
-          className={({ isActive }) => cn(
-            'flex items-center gap-2 rounded-md px-3 py-2 text-sm',
-            isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground',
-          )}
-        >
-          <ApperIcon name={item.icon ?? 'Circle'} size={18} />
-          <span>{item.label}</span>
-          {counts[item.to] != null && <span className="text-xs text-muted-foreground">{counts[item.to]}</span>}
-        </NavLink>
-      ))}
-    </div>
-  ));
+  const { navItems, displayName, initials } = useOwnerLayoutData();
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <header className="flex h-(--spacing-header) items-center gap-4 border-b border-border px-4">
-        <Link to={homeRoute} className="flex items-center gap-2 font-heading text-lg">
-          <ApperIcon name={APP_CONFIG.icon} size={20} /> {APP_CONFIG.name}
-        </Link>
-        <nav className="hidden items-center gap-1 md:flex">{nav}</nav>
-        <button type="button" className="md:hidden" aria-label="Toggle navigation" onClick={() => setNavOpen((o) => !o)}>
-          <ApperIcon name="Menu" size={22} />
+    <div className="min-h-screen bg-background text-foreground md:flex">
+      <aside className="hidden w-64 shrink-0 border-r border-border bg-card md:flex md:flex-col">
+        <button onClick={() => navigate('/')} className="flex items-center gap-3 border-b border-border px-6 py-5 text-left">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <ApperIcon name="BookOpenCheck" size={21} />
+          </span>
+          <span>
+            <span className="block font-serif text-xl font-semibold">SpardhaOS</span>
+            <span className="text-xs text-muted-foreground">तुमचा अभ्यास साथी</span>
+          </span>
         </button>
-        <div className="ml-auto">
-          <UserMenu user={user} initials={initials} displayName={displayName} logout={logout} />
+        <div className="px-4 py-5">
+          <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">तयारी</p>
+          <nav className="space-y-1">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === '/'}
+                className={({ isActive }) => cn(
+                  'flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <ApperIcon name={item.icon || 'Circle'} size={18} />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
         </div>
-      </header>
-      {navOpen && <nav className="flex flex-col gap-1 border-b border-border p-2 md:hidden">{nav}</nav>}
-      <main className="p-4 md:p-6">
-        <ErrorBoundary><Outlet /></ErrorBoundary>
+        <div className="mt-auto border-t border-border p-4">
+          <div className="mb-3 flex items-center gap-3 px-2">
+            <div className="grid h-9 w-9 place-items-center rounded-full bg-secondary text-sm font-bold">{initials}</div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{displayName}</p>
+              <p className="text-xs text-muted-foreground">MPSC विद्यार्थी</p>
+            </div>
+          </div>
+          <UserMenu />
+        </div>
+      </aside>
+      <main className="min-w-0 flex-1 pb-20 md:pb-0">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur md:hidden">
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 font-serif text-lg font-semibold">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><ApperIcon name="BookOpenCheck" size={17} /></span>
+            SpardhaOS
+          </button>
+          <UserMenu />
+        </header>
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <Outlet />
+        </div>
       </main>
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card/95 px-1 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur md:hidden">
+        {navItems.slice(0, 5).map((item) => (
+          <NavLink key={item.path} to={item.path} end={item.path === '/'} className={({ isActive }) => cn('flex min-h-14 flex-col items-center justify-center gap-1 rounded-md text-[10px] font-semibold', isActive ? 'text-primary' : 'text-muted-foreground')}>
+            <ApperIcon name={item.icon || 'Circle'} size={19} />
+            <span className="max-w-full truncate">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }
