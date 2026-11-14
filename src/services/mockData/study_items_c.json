@@ -1,0 +1,26 @@
+{
+  "_meta": {
+    "_table": { "label": "अभ्यास नोंदी", "plural": "अभ्यास नोंदी", "icon": "BookOpenCheck" },
+    "Name": { "type": "Text", "label": "शीर्षक", "required": true },
+    "item_type_c": { "type": "Picklist", "label": "नोंदीचा प्रकार", "values": "study_task,revision,mistake" },
+    "subject_c": { "type": "Text", "label": "विषय" },
+    "topic_c": { "type": "Text", "label": "घटक" },
+    "duration_c": { "type": "Number", "label": "कालावधी (मिनिटे)" },
+    "status_c": { "type": "Picklist", "label": "स्थिती", "values": "Pending,Done,Deferred,Open,Resolved" },
+    "priority_c": { "type": "Picklist", "label": "प्राधान्य", "values": "High,Medium,Low" },
+    "due_label_c": { "type": "Text", "label": "देय तारीख" },
+    "reason_c": { "type": "Text", "label": "कारण" },
+    "note_c": { "type": "Text", "label": "नोंद" }
+  },
+  "records": [
+    { "Id": "10000000-0000-4000-8000-000000000001", "Name": "महाराष्ट्रातील समाजसुधारक", "item_type_c": "study_task", "subject_c": "इतिहास", "topic_c": "आधुनिक महाराष्ट्र", "duration_c": 35, "status_c": "Pending", "priority_c": "High", "due_label_c": "आज", "reason_c": "मुख्य अभ्यासक्रमातील महत्त्वाचा घटक", "note_c": "वाचन आणि ५ मुद्द्यांची नोंद", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" },
+    { "Id": "10000000-0000-4000-8000-000000000002", "Name": "मूलभूत हक्क आणि कर्तव्ये", "item_type_c": "study_task", "subject_c": "राज्यशास्त्र", "topic_c": "भारतीय राज्यघटना", "duration_c": 40, "status_c": "Pending", "priority_c": "High", "due_label_c": "आज", "reason_c": "मागील सरावात चुका झाल्या", "note_c": "कलम १२ ते ३५", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" },
+    { "Id": "10000000-0000-4000-8000-000000000003", "Name": "भारतीय मान्सून", "item_type_c": "study_task", "subject_c": "भूगोल", "topic_c": "हवामान", "duration_c": 25, "status_c": "Done", "priority_c": "Medium", "due_label_c": "आज", "reason_c": "नियोजित उजळणी", "note_c": "नमुना पूर्ण केलेले काम", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" },
+    { "Id": "10000000-0000-4000-8000-000000000004", "Name": "महाराष्ट्र शासनाच्या योजना", "item_type_c": "study_task", "subject_c": "चालू घडामोडी", "topic_c": "राज्य योजना", "duration_c": 20, "status_c": "Pending", "priority_c": "Medium", "due_label_c": "आज", "reason_c": "परीक्षा-केंद्रित वाचन", "note_c": "महत्त्वाची उद्दिष्टे आणि लाभार्थी", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" },
+    { "Id": "20000000-0000-4000-8000-000000000001", "Name": "भारतीय राज्यघटनेची उद्देशिका", "item_type_c": "revision", "subject_c": "राज्यशास्त्र", "topic_c": "उद्देशिका", "duration_c": 15, "status_c": "Open", "priority_c": "High", "due_label_c": "आज", "reason_c": "मागील सरावात २ चुका", "note_c": "", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" },
+    { "Id": "20000000-0000-4000-8000-000000000002", "Name": "सत्यशोधक समाज", "item_type_c": "revision", "subject_c": "आधुनिक इतिहास", "topic_c": "समाजसुधारणा", "duration_c": 15, "status_c": "Open", "priority_c": "Medium", "due_label_c": "आज", "reason_c": "७ दिवसांपूर्वी अभ्यास केला", "note_c": "", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" },
+    { "Id": "20000000-0000-4000-8000-000000000003", "Name": "महाराष्ट्रातील नद्या", "item_type_c": "revision", "subject_c": "भूगोल", "topic_c": "नद्या", "duration_c": 15, "status_c": "Open", "priority_c": "Medium", "due_label_c": "उद्या", "reason_c": "अचूकता ६०% पेक्षा कमी", "note_c": "", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" },
+    { "Id": "30000000-0000-4000-8000-000000000001", "Name": "मूलभूत हक्क", "item_type_c": "mistake", "subject_c": "राज्यशास्त्र", "topic_c": "कलम १४ आणि १९", "duration_c": 0, "status_c": "Open", "priority_c": "High", "due_label_c": "आज", "reason_c": "पर्यायांमधील गोंधळ", "note_c": "कलम १४ आणि १९ मधील फरक पुन्हा वाचा.", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" },
+    { "Id": "30000000-0000-4000-8000-000000000002", "Name": "सत्यशोधक समाज", "item_type_c": "mistake", "subject_c": "इतिहास", "topic_c": "स्थापना वर्ष", "duration_c": 0, "status_c": "Open", "priority_c": "Medium", "due_label_c": "आज", "reason_c": "तथ्य विसरणे", "note_c": "स्थापना वर्ष १८७३ लक्षात ठेवा.", "Owner": { "Id": "a41c9d27-5e8f-4b06-9c3a-d7f218e64b90", "Name": "Demo Admin" }, "CreatedOn": "2026-11-14T07:00:00.000Z", "ModifiedOn": "2026-11-14T07:00:00.000Z" }
+  ]
+}
