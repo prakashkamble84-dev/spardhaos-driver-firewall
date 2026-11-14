@@ -49,7 +49,7 @@ async function fetchTaskMetrics() {
 export default function Home() {
   const [notice, setNotice] = useState('');
   const { data: tasksData, loading, error, run } = useFetch(fetchTasks, []);
-  const { data: metrics } = useFetch(fetchTaskMetrics, []);
+  const { data: metrics, run: reloadMetrics, error: metricsError } = useFetch(fetchTaskMetrics, []);
   const tasks = tasksData ?? [];
 
   async function toggleTask(task) {
@@ -63,7 +63,7 @@ export default function Home() {
 
       if (!result.data?.length) throw new Error(result.messages?.[0] || 'बदल जतन झाले नाहीत.');
       setNotice(nextStatus === 'Done' ? 'काम पूर्ण म्हणून नोंदवले.' : 'काम पुन्हा बाकी म्हणून ठेवले.');
-      await Promise.all([run()]);
+      await Promise.all([run(), reloadMetrics()]);
     } catch (err) {
       setNotice(err.message || 'काहीतरी चुकले. पुन्हा प्रयत्न करा.');
     }
@@ -95,6 +95,8 @@ export default function Home() {
         </div>
         <div className="absolute -right-8 -top-12 hidden h-64 w-64 rounded-full border-[32px] border-primary-foreground/10 sm:block" />
       </section>
+
+      {metricsError && <p role="alert" className="rounded-lg bg-warning-muted p-3 text-sm text-warning-foreground">{metricsError}</p>}
 
       <section className="grid gap-3 sm:grid-cols-3">
         <Metric icon="Clock3" label="पूर्ण केलेला नियोजित वेळ" value={(metrics?.minutes ?? 0) + ' मिनिटे'} hint="पूर्ण कामांच्या वेळेची बेरीज" />

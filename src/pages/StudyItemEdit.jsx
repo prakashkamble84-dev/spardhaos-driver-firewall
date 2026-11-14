@@ -22,7 +22,7 @@ export default function StudyItemEdit() {
   const [saveError, setSaveError] = useState('');
 
   if (loading) return <p className="py-12 text-center text-muted-foreground">नोंद लोड होत आहे...</p>;
-  if (error || !item) return <div className="space-y-3"><Link to="/study-plan" className="text-sm font-bold text-primary">← अभ्यास प्लॅनकडे परत</Link><p role="alert" className="rounded-lg bg-warning-muted p-4 text-warning-foreground">{error?.message || 'नोंद सापडली नाही.'}</p></div>;
+  if (error || !item) return <div className="space-y-3"><Link to="/study-plan" className="text-sm font-bold text-primary">← अभ्यास प्लॅनकडे परत</Link><p role="alert" className="rounded-lg bg-warning-muted p-4 text-warning-foreground">{error || 'नोंद सापडली नाही.'}</p></div>;
 
   const values = form ?? {
     Name: item.Name || '',

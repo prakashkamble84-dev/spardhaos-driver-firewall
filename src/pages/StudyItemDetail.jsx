@@ -4,6 +4,7 @@ import { useFetch } from '@/hooks/useFetch';
 import { sdk } from '@/services/sdk';
 import { toast } from 'sonner';
 import ApperIcon from '@/components/ApperIcon';
+import { formatLocalDate, DATE_FORMATS } from '@/utils/date';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,7 +64,7 @@ export default function StudyItemDetail() {
           <Detail label="घटक" value={item.topic_c} />
           <Detail label="कालावधी" value={item.duration_minutes_c ? `${item.duration_minutes_c} मिनिटे` : 'लागू नाही'} />
           <Detail label="प्राधान्य" value={item.priority_c} />
-          <Detail label="देय तारीख" value={item.due_date_c} />
+          <Detail label="देय तारीख" value={item.due_date_c ? formatLocalDate(item.due_date_c, DATE_FORMATS.SHORT) : ''} />
           <Detail label="नोंद" value={item.notes_c} />
         </dl>
         <div className="mt-7 flex flex-wrap gap-3 border-t border-border pt-5">
