@@ -7,38 +7,50 @@ import ApperIcon from '@/components/ApperIcon';
 export const route = { path: '/', layout: 'owner', access: 'authenticated' };
 export const nav = { label: 'मुख्यपृष्ठ', icon: 'House', order: 1 };
 
-const FIELDS = [
-  'Id',
-  'Name',
-  'subject_c',
-  'topic_c',
-  'duration_minutes_c',
-  'status_c',
-  'priority_c',
-];
+const { eq } = window.ApperSDK.CoreSDK;
+const TASK_FIELDS = ['Id', 'Name', 'subject_c', 'topic_c', 'duration_minutes_c', 'status_c'];
 
 async function fetchTasks() {
   const result = await sdk.table('study_tasks_c')
-    .select(FIELDS)
+    .select(TASK_FIELDS)
     .orderByDesc('CreatedOn')
-    .page(1, 100)
+    .page(1, 6)
     .fetch();
 
-  if (!result.success) {
-    throw new Error(result.message || 'अभ्यास कामे लोड झाली नाहीत.');
-  }
-
+  if (!result.success) throw new Error(result.message || 'अभ्यास कामे लोड झाली नाहीत.');
   return result.data;
+}
+
+async function fetchTaskMetrics() {
+  const result = await sdk.table('study_tasks_c')
+    .select([{ field: 'Id' }])
+    .aggregate([
+      { id: 'total', fields: [{ field: 'Id', fn: 'Count', alias: 'count' }] },
+      { id: 'done', fields: [{ field: 'Id', fn: 'Count', alias: 'count' }], where: eq('status_c', 'Done') },
+      { id: 'minutes', fields: [{ field: 'duration_minutes_c', fn: 'Sum', alias: 'count' }], where: eq('status_c', 'Done') },
+    ])
+    .limit(1)
+    .fetch();
+
+  if (!result.success) throw new Error(result.message || 'प्रगतीची आकडेवारी लोड झाली नाही.');
+
+  const value = (id) => {
+    const item = result.aggregators?.find((entry) => entry.id === id);
+    return Number(item?.data?.count ?? item?.count ?? item?.value ?? 0);
+  };
+
+  return {
+    total: value('total'),
+    done: value('done'),
+    minutes: value('minutes'),
+  };
 }
 
 export default function Home() {
   const [notice, setNotice] = useState('');
-  const { data, loading, error, run } = useFetch(fetchTasks, []);
-  const tasks = data ?? [];
-  const completed = tasks.filter((task) => task.status_c === 'Done').length;
-  const minutes = tasks
-    .filter((task) => task.status_c === 'Done')
-    .reduce((sum, task) => sum + (Number(task.duration_minutes_c) || 0), 0);
+  const { data: tasksData, loading, error, run } = useFetch(fetchTasks, []);
+  const { data: metrics } = useFetch(fetchTaskMetrics, []);
+  const tasks = tasksData ?? [];
 
   async function toggleTask(task) {
     const nextStatus = task.status_c === 'Done' ? 'Pending' : 'Done';
@@ -49,14 +61,9 @@ export default function Home() {
         status_c: nextStatus,
       });
 
-      if (!result.data?.length) {
-        throw new Error(result.messages?.[0] || 'बदल जतन झाले नाहीत.');
-      }
-
-      setNotice(nextStatus === 'Done'
-        ? 'काम पूर्ण म्हणून नोंदवले.'
-        : 'काम पुन्हा बाकी म्हणून ठेवले.');
-      await run();
+      if (!result.data?.length) throw new Error(result.messages?.[0] || 'बदल जतन झाले नाहीत.');
+      setNotice(nextStatus === 'Done' ? 'काम पूर्ण म्हणून नोंदवले.' : 'काम पुन्हा बाकी म्हणून ठेवले.');
+      await Promise.all([run()]);
     } catch (err) {
       setNotice(err.message || 'काहीतरी चुकले. पुन्हा प्रयत्न करा.');
     }
@@ -90,9 +97,9 @@ export default function Home() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
-        <Metric icon="Clock3" label="पूर्ण केलेला नियोजित वेळ" value={minutes + ' मिनिटे'} hint="पूर्ण कामांच्या वेळेची बेरीज" />
-        <Metric icon="ListChecks" label="पूर्ण कामे" value={completed + ' / ' + tasks.length} hint="तुमच्या जतन केलेल्या कामांपैकी" />
-        <Metric icon="Target" label="बाकी कामे" value={tasks.length - completed} hint="अजून पूर्ण करायची कामे" />
+        <Metric icon="Clock3" label="पूर्ण केलेला नियोजित वेळ" value={(metrics?.minutes ?? 0) + ' मिनिटे'} hint="पूर्ण कामांच्या वेळेची बेरीज" />
+        <Metric icon="ListChecks" label="पूर्ण कामे" value={(metrics?.done ?? 0) + ' / ' + (metrics?.total ?? 0)} hint="तुमच्या जतन केलेल्या कामांपैकी" />
+        <Metric icon="Target" label="बाकी कामे" value={Math.max(0, (metrics?.total ?? 0) - (metrics?.done ?? 0))} hint="अजून पूर्ण करायची कामे" />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.35fr_0.85fr]">
@@ -120,7 +127,7 @@ export default function Home() {
           )}
 
           <div className="space-y-2">
-            {tasks.slice(0, 6).map((task) => (
+            {tasks.map((task) => (
               <button
                 key={task.Id}
                 onClick={() => toggleTask(task)}
