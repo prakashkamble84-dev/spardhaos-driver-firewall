@@ -5,7 +5,8 @@ import { sdk } from '@/services/sdk';
 export const route = { path: '/settings', layout: 'owner', access: 'authenticated' };
 export const nav = { label: 'सेटिंग्ज', icon: 'Settings', order: 12 };
 
-const FIELDS = ['Id', 'Name', 'target_exam_c', 'exam_medium_c', 'district_c', 'daily_goal_minutes_c', 'onboarding_complete_c'];
+const FIELDS = ['Id', 'Name', 'target_exam_c', 'exam_medium_c', 'phone_c', 'district_c', 'daily_goal_minutes_c', 'onboarding_complete_c'];
+const PHONE_PATTERN = /^[6-9]\d{9}$/;
 
 async function fetchProfile() {
   const result = await sdk.table('student_profiles_c').select(FIELDS).orderByDesc('CreatedOn').fetch();
@@ -22,6 +23,7 @@ export default function Settings() {
   const values = form ?? {
     target_exam_c: profile?.target_exam_c || 'MPSC राज्यसेवा',
     exam_medium_c: profile?.exam_medium_c || 'Marathi',
+    phone_c: profile?.phone_c || '',
     district_c: profile?.district_c || '',
     daily_goal_minutes_c: String(profile?.daily_goal_minutes_c ?? 180),
   };
@@ -32,6 +34,11 @@ export default function Settings() {
 
   async function save(event) {
     event.preventDefault();
+    const phone = values.phone_c.replace(/\s+/g, '');
+    if (phone && !PHONE_PATTERN.test(phone)) {
+      setNotice('कृपया वैध १० अंकी मोबाईल नंबर टाका.');
+      return;
+    }
     setSaving(true);
     setNotice('');
     try {
@@ -39,6 +46,7 @@ export default function Settings() {
         Name: 'Student Profile',
         target_exam_c: values.target_exam_c,
         exam_medium_c: values.exam_medium_c,
+        phone_c: phone,
         district_c: values.district_c.trim(),
         daily_goal_minutes_c: Number(values.daily_goal_minutes_c) || 0,
         onboarding_complete_c: true,
@@ -66,6 +74,7 @@ export default function Settings() {
         <Field label="लक्ष्य परीक्षा"><select value={values.target_exam_c} onChange={(event) => change('target_exam_c', event.target.value)} className="field"><option>MPSC राज्यसेवा</option><option>तलाठी भरती</option><option>पोलीस भरती</option><option>गट-क परीक्षा</option></select></Field>
         <Field label="अभ्यासाची भाषा"><select value={values.exam_medium_c} onChange={(event) => change('exam_medium_c', event.target.value)} className="field"><option value="Marathi">मराठी</option><option value="English">English</option></select></Field>
         <Field label="जिल्हा"><input value={values.district_c} onChange={(event) => change('district_c', event.target.value)} placeholder="उदा. पुणे" className="field" /></Field>
+        <Field label="मोबाईल नंबर"><input type="tel" inputMode="numeric" value={values.phone_c} onChange={(event) => change('phone_c', event.target.value)} placeholder="उदा. 9876543210" className="field" /></Field>
         <Field label="दररोज अभ्यासाचे लक्ष्य (मिनिटे)"><input type="number" min="0" value={values.daily_goal_minutes_c} onChange={(event) => change('daily_goal_minutes_c', event.target.value)} className="field" /></Field>
         <button disabled={saving || loading} className="min-h-11 rounded-lg bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50">{saving ? 'जतन करत आहे...' : 'बदल जतन करा'}</button>
         {notice && <p role="status" className="text-sm font-semibold text-success">{notice}</p>}
