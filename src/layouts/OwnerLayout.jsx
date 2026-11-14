@@ -1,15 +1,26 @@
-import { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useOwnerLayoutData } from '@/hooks/useOwnerLayoutData';
+import { useFetch } from '@/hooks/useFetch';
+import { fetchStudentProfile, isOnboardingDone } from '@/services/studentProfile';
 import UserMenu from '@/components/UserMenu';
 import ApperIcon from '@/components/ApperIcon';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { cn } from '@/lib/utils';
 
 export default function OwnerLayout() {
-  const { navItems, displayName, initials } = useOwnerLayoutData();
+  const { navItems, displayName, initials, user } = useOwnerLayoutData();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: studentProfile, loading: profileLoading, error: profileError } = useFetch(fetchStudentProfile, []);
+
+  useEffect(() => {
+    if (user?.profile !== 'Student_c' || profileLoading || profileError || studentProfile === undefined) return;
+    if (pathname !== '/onboarding' && !isOnboardingDone() && !studentProfile?.onboarding_complete_c) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [user?.profile, profileLoading, profileError, studentProfile, pathname, navigate]);
 
   return (
     <div className="min-h-screen bg-background text-foreground md:flex">
