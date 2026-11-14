@@ -22,6 +22,7 @@ const SECTIONS = [
   { to: '/mock-tests', label: 'Mock tests', icon: 'ClipboardList' },
   { to: '/current-affairs', label: 'Current affairs', icon: 'Newspaper' },
   { to: '/exam-alerts', label: 'Exam alerts', icon: 'Bell' },
+  { to: '/admin-feedback', label: 'Feedback inbox', icon: 'Inbox' },
 ];
 
 async function countRows(table) {
