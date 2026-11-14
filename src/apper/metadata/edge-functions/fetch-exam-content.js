@@ -12,7 +12,7 @@ const json = (status, body) =>
   });
 
 async function getJson(url) {
-  const res = await fetch(url, { headers: UPSTREAM_HEADERS });
+  const res = await fetch(url, { headers: UPSTREAM_HEADERS, signal: AbortSignal.timeout(6000) });
   if (!res.ok) throw new Error(`Upstream responded ${res.status}`);
   return res.json();
 }
