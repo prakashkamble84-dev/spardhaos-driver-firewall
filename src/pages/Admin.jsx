@@ -21,6 +21,7 @@ const SECTIONS = [
   { to: '/billing', label: 'Billing plans and payments', icon: 'CreditCard' },
   { to: '/mock-tests', label: 'Mock tests', icon: 'ClipboardList' },
   { to: '/current-affairs', label: 'Current affairs', icon: 'Newspaper' },
+  { to: '/question-quality', label: 'Question quality', icon: 'ShieldCheck' },
   { to: '/exam-alerts', label: 'Exam alerts', icon: 'Bell' },
   { to: '/admin-feedback', label: 'Feedback inbox', icon: 'Inbox' },
   { to: '/business-intelligence', label: 'Business intelligence', icon: 'TrendingUp' },

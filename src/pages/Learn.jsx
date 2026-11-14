@@ -33,7 +33,7 @@ async function fetchMaterials() {
   return result.data;
 }
 
-const EXAM_FIELDS = ['Name', 'exam_code_c', 'exam_authority_c'];
+const EXAM_FIELDS = ['Name', 'exam_code_c', 'exam_authority_c', 'official_url_c', 'notification_url_c'];
 
 async function fetchPublishedExams() {
   const result = await sdk.table('exam_tracks_c')
@@ -108,6 +108,7 @@ function LiveExamContent() {
   const cachedContent = !liveContent && selectedExam ? cache[selectedExam] ?? null : null;
   const content = liveContent ?? cachedContent;
   const isCached = !liveContent && Boolean(cachedContent);
+  const selectedRecord = (exams ?? []).find((exam) => exam.Name === selectedExam);
 
   useEffect(() => {
     if (!response?.success || !response.data?.examName) return;
@@ -152,6 +153,22 @@ function LiveExamContent() {
       </div>
 
       {loading && <p className="text-sm text-muted-foreground">थेट माहिती शोधत आहे...</p>}
+      {selectedRecord && (selectedRecord.official_url_c || selectedRecord.notification_url_c) && (
+        <div className="flex flex-wrap gap-4 text-sm">
+          {selectedRecord.official_url_c && (
+            <a href={selectedRecord.official_url_c} target="_blank" rel="noreferrer" className="inline-flex min-w-0 items-center gap-1.5 font-semibold text-primary hover:underline">
+              <ApperIcon name="ExternalLink" size={14} className="shrink-0" />
+              अधिकृत संकेतस्थळ
+            </a>
+          )}
+          {selectedRecord.notification_url_c && (
+            <a href={selectedRecord.notification_url_c} target="_blank" rel="noreferrer" className="inline-flex min-w-0 items-center gap-1.5 font-semibold text-primary hover:underline">
+              <ApperIcon name="ExternalLink" size={14} className="shrink-0" />
+              जाहिरात / सूचना
+            </a>
+          )}
+        </div>
+      )}
       {!loading && lookupError && <p className="text-sm text-warning-foreground">थेट माहिती मिळवता आली नाही. कृपया पुन्हा प्रयत्न करा.</p>}
 
       {content && !loading && (
