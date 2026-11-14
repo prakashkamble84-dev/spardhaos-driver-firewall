@@ -23,6 +23,7 @@ const SECTIONS = [
   { to: '/current-affairs', label: 'Current affairs', icon: 'Newspaper' },
   { to: '/exam-alerts', label: 'Exam alerts', icon: 'Bell' },
   { to: '/admin-feedback', label: 'Feedback inbox', icon: 'Inbox' },
+  { to: '/business-intelligence', label: 'Business intelligence', icon: 'TrendingUp' },
 ];
 
 async function countRows(table) {
