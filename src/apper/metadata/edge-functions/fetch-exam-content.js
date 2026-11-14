@@ -1,7 +1,5 @@
 import apper from 'https://cdn.apper.io/actions/apper-actions.js';
 
-const UPSTREAM_TIMEOUT_MS = 6000;
-
 const UPSTREAM_HEADERS = {
   'User-Agent': 'SpardhaOS/1.0 (Maharashtra exam study app)',
   Accept: 'application/json',
@@ -14,10 +12,7 @@ const json = (status, body) =>
   });
 
 async function getJson(url) {
-  const res = await fetch(url, {
-    headers: UPSTREAM_HEADERS,
-    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-  });
+  const res = await fetch(url, { headers: UPSTREAM_HEADERS });
   if (!res.ok) throw new Error(`Upstream responded ${res.status}`);
   return res.json();
 }
@@ -36,6 +31,26 @@ async function wikipediaOverview(lang, query) {
     extract: summary.extract ?? '',
     url: summary.content_urls?.desktop?.page ?? `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(hit.title)}`,
   };
+}
+
+async function aiStudySummary(apiKey, examName, sources) {
+  const context = sources
+    .filter(Boolean)
+    .map((s) => `${s.title}: ${s.extract}`)
+    .join('\n\n')
+    .slice(0, 8000);
+  const prompt = `You are a study assistant for Maharashtra competitive exams. Using only the source text below, write a concise study overview of "${examName}" in Marathi (3-5 short bullet points covering purpose, eligibility-level, and key subjects). If the sources are insufficient, say so briefly. Do not invent facts.\n\nSources:\n${context || 'No sources found.'}`;
+  const res = await fetch(
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    },
+  );
+  if (!res.ok) throw new Error(`Gemini responded ${res.status}`);
+  const payload = await res.json();
+  return payload?.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim() || null;
 }
 
 apper.serve(async (req) => {
@@ -81,6 +96,14 @@ apper.serve(async (req) => {
 
   if (!en && !mr) {
     data.warning = `"${encoded}" विषयी विकिपीडियावर माहिती सापडली नाही; खालील अधिकृत व शोध दुवे वापरा.`;
+  }
+
+  try {
+    const apiKey = await apper.getSecret('GOOGLE_API_KEY');
+    data.aiSummary = apiKey ? await aiStudySummary(apiKey, examName, [en, mr]) : null;
+  } catch (error) {
+    console.info(`apper_info: Got this error in this function: fetch-exam-content. The error is: ${error.message}`);
+    data.aiSummary = null;
   }
 
   return json(200, { success: true, data });

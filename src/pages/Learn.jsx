@@ -159,6 +159,13 @@ function LiveExamContent() {
           {content.warning && <p className="rounded-lg bg-warning-muted p-3 text-sm text-warning-foreground">{content.warning}</p>}
           {isCached && <p className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">थेट स्रोत उपलब्ध नाही; शेवटची यशस्वी माहिती दाखवत आहे.</p>}
 
+          {content.aiSummary && (
+            <div className="min-w-0 space-y-2 rounded-xl border border-border bg-card p-4">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">AI अभ्यास सारांश</h3>
+              <p className="whitespace-pre-line text-sm leading-6 break-words">{content.aiSummary}</p>
+            </div>
+          )}
+
           {(content.overview || content.marathiOverview) && (
             <div className="grid gap-4 md:grid-cols-2">
               {[content.overview, content.marathiOverview].filter(Boolean).map((summary) => (
