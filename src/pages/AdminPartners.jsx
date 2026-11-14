@@ -12,6 +12,7 @@ export const nav = { label: 'Partners', icon: 'Handshake', order: 94, profiles: 
 
 const PARTNER_FIELDS = ['Id', 'Name', 'revenue_share_percent_c', 'contact_email_c', 'is_active_c'];
 const PAYOUT_FIELDS = ['Id', 'partner_c', 'period_start_c', 'period_end_c', 'gross_c', 'partner_share_c', 'status_c', 'paid_on_c', 'reference_c'];
+const SUBSCRIPTION_FIELDS = ['Id', 'Name', 'status_c', 'partner_c'];
 const PAYOUT_STATUSES = ['Pending', 'Paid'];
 const SELECT_CLASS = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm';
 const EMPTY_PARTNER = { Name: '', revenue_share_percent_c: '', contact_email_c: '' };
@@ -41,31 +42,38 @@ async function fetchPayouts() {
   return result.data ?? [];
 }
 
+async function fetchSubscriptions() {
+  const result = await sdk.table('subscriptions_c').select(SUBSCRIPTION_FIELDS).orderByDesc('CreatedOn').page(1, 100).fetch();
+  if (!result.success) throw new Error(result.message || 'Subscriptions could not be loaded.');
+  return result.data ?? [];
+}
+
 async function calculateShare(partner, start, end) {
-  const { eq, and, between } = window.ApperSDK.CoreSDK;
+  const { eq, and, between, isIn } = window.ApperSDK.CoreSDK;
   const subs = await sdk.table('subscriptions_c').select(['Id', 'partner_c']).where(eq('partner_c', partner.Id)).fetch();
   if (!subs.success) throw new Error(subs.message || 'Subscriptions could not be loaded.');
-  const subIds = new Set((subs.data ?? []).map((s) => String(s.Id)));
-  if (!subIds.size) return { gross: 0, share: 0, subscriptionCount: 0 };
+  const subIds = [...new Set((subs.data ?? []).map((s) => String(s.Id)))];
+  if (!subIds.length) return { gross: 0, share: 0, subscriptionCount: 0 };
 
   const payments = await sdk.table('payments_c')
     .select(['Id', 'subscription_c', 'amount_c', 'status_c', 'paid_on_c'])
-    .where(and(eq('status_c', 'Recorded'), between('paid_on_c', start, end)))
+    .where(and(eq('status_c', 'Recorded'), between('paid_on_c', start, end), isIn('subscription_c', subIds)))
     .fetch();
   if (!payments.success) throw new Error(payments.message || 'Payments could not be loaded.');
 
   const gross = roundMoney(
     (payments.data ?? [])
-      .filter((p) => subIds.has(String(p.subscription_c?.Id ?? p.subscription_c)))
+      .filter((p) => subIds.includes(String(p.subscription_c?.Id ?? p.subscription_c)))
       .reduce((sum, p) => sum + Number(p.amount_c ?? 0), 0),
   );
   const share = roundMoney((gross * Number(partner.revenue_share_percent_c ?? 0)) / 100);
-  return { gross, share, subscriptionCount: subIds.size };
+  return { gross, share, subscriptionCount: subIds.length };
 }
 
 export default function AdminPartners() {
   const { data: partners, loading: partnersLoading, error: partnersError, run: refetchPartners } = useFetch(fetchPartners, []);
   const { data: payouts, loading: payoutsLoading, error: payoutsError, run: refetchPayouts } = useFetch(fetchPayouts, []);
+  const { data: subscriptions, loading: subsLoading, error: subsError, run: refetchSubscriptions } = useFetch(fetchSubscriptions, []);
 
   const [partnerForm, setPartnerForm] = useState(EMPTY_PARTNER);
   const [savingPartner, setSavingPartner] = useState(false);
@@ -76,6 +84,7 @@ export default function AdminPartners() {
 
   const partnerList = partners ?? [];
   const payoutList = payouts ?? [];
+  const subscriptionList = subscriptions ?? [];
 
   async function addPartner(event) {
     event.preventDefault();
@@ -113,6 +122,16 @@ export default function AdminPartners() {
     } catch (err) {
       toast.error('Partner could not be updated.');
       console.error(`partners_c update failed: ${err.message}`);
+    }
+  }
+
+  async function assignPartner(subscription, partnerId) {
+    try {
+      const res = await sdk.table('subscriptions_c').update({ Id: subscription.Id, partner_c: partnerId || null });
+      if (writeSucceeded(res, 'subscriptions_c update')) refetchSubscriptions();
+    } catch (err) {
+      toast.error('Subscription could not be linked.');
+      console.error(`subscriptions_c update failed: ${err.message}`);
     }
   }
 
@@ -214,6 +233,37 @@ export default function AdminPartners() {
               <Button variant="outline" size="sm" onClick={() => togglePartner(partner)}>
                 {partner.is_active_c ? 'Deactivate' : 'Activate'}
               </Button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-label="Subscription partner links" className="space-y-3 rounded-xl border border-border bg-card p-4">
+        <h2 className="text-sm font-medium">Subscription partner links</h2>
+        <p className="text-xs text-muted-foreground">Only payments on subscriptions linked to a partner count toward that partner's share.</p>
+        {subsLoading && !subscriptions && <p className="py-4 text-sm text-muted-foreground">Loading subscriptions...</p>}
+        {subsError && <p className="py-4 text-sm text-destructive">{subsError.message}</p>}
+        {!subsLoading && !subsError && subscriptionList.length === 0 && (
+          <p className="py-4 text-sm text-muted-foreground">No subscriptions yet.</p>
+        )}
+        <ul className="divide-y divide-border">
+          {subscriptionList.map((sub) => (
+            <li key={sub.Id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{sub.Name ?? '—'}</p>
+                <p className="truncate text-xs text-muted-foreground">{sub.status_c ?? '—'}</p>
+              </div>
+              <select
+                aria-label="Partner for subscription"
+                className="h-8 max-w-48 rounded-md border border-input bg-background px-2 text-xs"
+                value={String(sub.partner_c?.Id ?? sub.partner_c ?? '')}
+                onChange={(e) => assignPartner(sub, e.target.value)}
+              >
+                <option value="">No partner</option>
+                {partnerList.map((partner) => (
+                  <option key={partner.Id} value={String(partner.Id)}>{partner.Name}</option>
+                ))}
+              </select>
             </li>
           ))}
         </ul>
