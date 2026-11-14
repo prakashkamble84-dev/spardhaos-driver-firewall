@@ -7,11 +7,10 @@ import ApperIcon from '@/components/ApperIcon';
 export const route = { path: '/', layout: 'owner', access: 'authenticated' };
 export const nav = { label: 'मुख्यपृष्ठ', icon: 'House', order: 1 };
 
-const { eq } = window.ApperSDK.CoreSDK;
-const FIELDS = ['Id', 'Name', 'item_type_c', 'subject_c', 'topic_c', 'duration_c', 'status_c', 'priority_c', 'due_label_c', 'reason_c'];
+const FIELDS = ['Id', 'Name', 'subject_c', 'topic_c', 'duration_minutes_c', 'status_c', 'priority_c', 'due_date_c'];
 
 async function fetchTasks() {
-  const result = await sdk.table('study_items_c').select(FIELDS).where(eq('item_type_c', 'study_task')).fetch();
+  const result = await sdk.table('study_tasks_c').select(FIELDS).orderByDesc('CreatedOn').fetch();
   if (!result.success) throw new Error(result.message || 'अभ्यास कामे लोड झाली नाहीत.');
   return result.data;
 }
@@ -21,15 +20,15 @@ export default function Home() {
   const { data, loading, error, run } = useFetch(fetchTasks, []);
   const tasks = data ?? [];
   const completed = tasks.filter((task) => task.status_c === 'Done').length;
-  const minutes = tasks.filter((task) => task.status_c === 'Done').reduce((sum, task) => sum + (Number(task.duration_c) || 0), 0);
+  const minutes = tasks.filter((task) => task.status_c === 'Done').reduce((sum, task) => sum + (Number(task.duration_minutes_c) || 0), 0);
 
   async function toggleTask(task) {
     const nextStatus = task.status_c === 'Done' ? 'Pending' : 'Done';
     try {
-      const result = await sdk.table('study_items_c').update({ Id: task.Id, status_c: nextStatus });
+      const result = await sdk.table('study_tasks_c').update({ Id: task.Id, status_c: nextStatus });
       if (!result.data?.length) throw new Error(result.messages?.[0] || 'बदल जतन झाले नाहीत.');
       setNotice(nextStatus === 'Done' ? 'काम पूर्ण म्हणून नोंदवले.' : 'काम पुन्हा बाकी म्हणून ठेवले.');
-      run();
+      await run();
     } catch (err) {
       setNotice(err.message || 'काहीतरी चुकले. पुन्हा प्रयत्न करा.');
     }
@@ -38,73 +37,38 @@ export default function Home() {
   return (
     <div className="space-y-7">
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="mb-2 text-sm font-semibold text-primary">आजचा दिवस · नमस्कार!</p>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">आजचा अभ्यास सुरू करूया.</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">तुमचे ध्येय मोठे आहे. आजची छोटी पावले सातत्याने पूर्ण करा.</p>
-        </div>
-        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground"><span className="h-2 w-2 rounded-full bg-warning" /> डेमो डेटा · नमुना प्रगती</span>
+        <div><p className="mb-2 text-sm font-semibold text-primary">आजचा दिवस · नमस्कार!</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">आजचा अभ्यास सुरू करूया.</h1><p className="mt-2 max-w-2xl text-muted-foreground">तुमचे ध्येय मोठे आहे. आजची छोटी पावले सातत्याने पूर्ण करा.</p></div>
+        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground"><span className="h-2 w-2 rounded-full bg-success" /> Live वैयक्तिक डेटा</span>
       </section>
 
       <section className="relative overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground sm:p-8">
-        <div className="relative z-10 max-w-2xl">
-          <p className="text-sm font-semibold text-primary-foreground/75">तुमचा वैयक्तिक अभ्यास आराखडा</p>
-          <h2 className="mt-2 font-serif text-2xl font-semibold sm:text-3xl">दररोज थोडी प्रगती. परीक्षेच्या दिवशी आत्मविश्वास.</h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-primary-foreground/80">आजचा अभ्यास पूर्ण करण्यासाठी तयार केलेला नमुना प्लॅन तुमची वाट पाहत आहे.</p>
-          <Link to="/study-plan" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-foreground px-4 py-2 text-sm font-bold text-primary transition-transform hover:-translate-y-0.5">आजचा प्लॅन उघडा <ApperIcon name="ArrowUpRight" size={17} /></Link>
-        </div>
+        <div className="relative z-10 max-w-2xl"><p className="text-sm font-semibold text-primary-foreground/75">तुमचा वैयक्तिक अभ्यास आराखडा</p><h2 className="mt-2 font-serif text-2xl font-semibold sm:text-3xl">दररोज थोडी प्रगती. परीक्षेच्या दिवशी आत्मविश्वास.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-primary-foreground/80">तुमच्या खात्यात जतन केलेली कामे इथे दिसतात.</p><Link to="/study-plan" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary-foreground px-4 py-2 text-sm font-bold text-primary transition-transform hover:-translate-y-0.5">आजचा प्लॅन उघडा <ApperIcon name="ArrowUpRight" size={17} /></Link></div>
         <div className="absolute -right-8 -top-12 hidden h-64 w-64 rounded-full border-[32px] border-primary-foreground/10 sm:block" />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
-        <Metric icon="Clock3" label="आजचा अभ्यास" value={`${minutes} मिनिटे`} hint="पूर्ण केलेल्या कामांमधून" />
-        <Metric icon="ListChecks" label="पूर्ण कामे" value={`${completed}/${tasks.length}`} hint="आजच्या नमुना कामांपैकी" />
-        <Metric icon="Target" label="अचूकता" value="७२%" hint="मागील नमुना सराव" />
+        <Metric icon="Clock3" label="पूर्ण केलेला नियोजित वेळ" value={minutes + ' मिनिटे'} hint="पूर्ण कामांच्या वेळेची बेरीज" />
+        <Metric icon="ListChecks" label="पूर्ण कामे" value={completed + ' / ' + tasks.length} hint="तुमच्या जतन केलेल्या कामांपैकी" />
+        <Metric icon="Target" label="बाकी कामे" value={tasks.length - completed} hint="अजून पूर्ण करायची कामे" />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.35fr_0.85fr]">
         <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">तुमची पुढची पायरी</p><h2 className="mt-1 font-serif text-2xl font-semibold">आजची कामे</h2></div>
-            <Link to="/study-plan" className="text-sm font-bold text-primary hover:underline">सर्व पाहा</Link>
-          </div>
+          <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">तुमची पुढची पायरी</p><h2 className="mt-1 font-serif text-2xl font-semibold">तुमची अभ्यास कामे</h2></div><Link to="/study-plan" className="text-sm font-bold text-primary hover:underline">सर्व पाहा</Link></div>
           {loading && <p className="py-8 text-center text-sm text-muted-foreground">अभ्यास कामे लोड होत आहेत...</p>}
-          {error && <div className="rounded-lg bg-warning-muted p-3 text-sm text-warning-foreground">{error.message} <button onClick={run} className="ml-2 font-bold underline">पुन्हा प्रयत्न करा</button></div>}
-          {!loading && !error && tasks.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">आजची कामे अजून जोडलेली नाहीत.</p>}
-          <div className="space-y-2">
-            {tasks.map((task) => (
-              <button key={task.Id} onClick={() => toggleTask(task)} className="flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${task.status_c === 'Done' ? 'border-success bg-success text-success-foreground' : 'border-border text-transparent'}`}><ApperIcon name="Check" size={14} /></span>
-                <span className="min-w-0 flex-1"><span className={`block truncate text-sm font-semibold ${task.status_c === 'Done' ? 'text-muted-foreground line-through' : ''}`}>{task.Name}</span><span className="mt-1 block text-xs text-muted-foreground">{task.subject_c} · {task.topic_c}</span></span>
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{task.duration_c} मि.</span>
-              </button>
-            ))}
-          </div>
+          {error && <div className="rounded-lg bg-warning-muted p-3 text-sm text-warning-foreground">{error} <button onClick={run} className="ml-2 font-bold underline">पुन्हा प्रयत्न करा</button></div>}
+          {!loading && !error && tasks.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">अभ्यास कामे अजून जोडलेली नाहीत. <Link to="/study-items/new" className="font-bold text-primary underline">पहिले काम जोडा.</Link></p>}
+          <div className="space-y-2">{tasks.slice(0, 6).map((task) => <button key={task.Id} onClick={() => toggleTask(task)} className="flex w-full items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${task.status_c === 'Done' ? 'border-success bg-success text-success-foreground' : 'border-border text-transparent'}`}><ApperIcon name="Check" size={14} /></span><span className="min-w-0 flex-1"><span className={`block truncate text-sm font-semibold ${task.status_c === 'Done' ? 'text-muted-foreground line-through' : ''}`}>{task.Name}</span><span className="mt-1 block text-xs text-muted-foreground">{task.subject_c} · {task.topic_c}</span></span><span className="shrink-0 text-xs tabular-nums text-muted-foreground">{task.duration_minutes_c} मि.</span></button>)}</div>
           {notice && <p role="status" className="mt-3 text-xs font-semibold text-success">{notice}</p>}
-          <p className="mt-4 text-xs text-muted-foreground">नमुना डेटा: हे बदल Apper च्या सध्याच्या demo data layer मध्ये जतन होतात.</p>
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">सातत्य</p><h2 className="mt-1 font-serif text-xl font-semibold">अभ्यासाची सवय</h2></div><ApperIcon name="Flame" size={22} className="text-warning" /></div>
-            <p className="mt-4 text-4xl font-semibold tabular-nums">४ दिवस</p><p className="mt-1 text-sm text-muted-foreground">सलग अभ्यासाचे नमुना दिवस</p>
-            <div className="mt-4 flex gap-2">{['सो','मं','बु','गु','शु','श','रवि'].map((day, index) => <div key={day} className={`grid h-9 flex-1 place-items-center rounded-lg text-xs font-bold ${index < 4 ? 'bg-success text-success-foreground' : 'bg-secondary text-muted-foreground'}`}>{day}</div>)}</div>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">लक्ष द्या</p><h2 className="mt-1 font-serif text-xl font-semibold">उजळणी बाकी आहे</h2><p className="mt-2 text-sm text-muted-foreground">भारतीय राज्यघटना आणि आधुनिक इतिहास या विषयांची उजळणी देय आहे.</p><Link to="/revision" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-primary">उजळणी सुरू करा <ApperIcon name="ArrowRight" size={16} /></Link></div>
+          <div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">सातत्य</p><h2 className="mt-1 font-serif text-xl font-semibold">पुढील कृती</h2></div><ApperIcon name="Flame" size={22} className="text-warning" /></div><p className="mt-4 text-sm leading-6 text-muted-foreground">दररोजचा अभ्यास पूर्ण झाल्यावर कामांची स्थिती बदला. तुमची प्रगती खऱ्या नोंदींवर आधारित राहील.</p><Link to="/progress" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary">प्रगती पाहा <ApperIcon name="ArrowRight" size={16} /></Link></div>
+          <div className="rounded-2xl border border-border bg-card p-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">लक्ष द्या</p><h2 className="mt-1 font-serif text-xl font-semibold">उजळणी आणि चुका</h2><p className="mt-2 text-sm text-muted-foreground">कमकुवत घटक आणि चुका स्वतंत्रपणे नोंदवा, जेणेकरून त्या पुढील सरावात दिसतील.</p><div className="mt-4 flex flex-wrap gap-3"><Link to="/revision" className="text-sm font-bold text-primary">उजळणी <ApperIcon name="ArrowRight" size={14} className="inline" /></Link><Link to="/mistakes" className="text-sm font-bold text-primary">चूक वही <ApperIcon name="ArrowRight" size={14} className="inline" /></Link></div></div>
         </div>
       </section>
 
-      <section>
-        <div className="mb-4"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">तुमचे अभ्यास साधन</p><h2 className="mt-1 font-serif text-2xl font-semibold">पुढे काय करायचे?</h2></div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            { to: '/study-plan', icon: 'CalendarDays', label: 'अभ्यास नियोजन', note: 'आजचा आणि आठवड्याचा प्लॅन' },
-            { to: '/practice', icon: 'ClipboardCheck', label: 'सराव प्रश्न', note: 'विषयानुसार MCQ सोडवा' },
-            { to: '/revision', icon: 'Brain', label: 'उजळणी', note: 'विसरण्यापूर्वी पुन्हा शिका' },
-            { to: '/tutor', icon: 'MessageCircle', label: 'AI अभ्यास मार्गदर्शक', note: 'कठीण संकल्पना समजून घ्या' }
-          ].map((item) => <Link key={item.to} to={item.to} className="group rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"><ApperIcon name={item.icon} size={21} className="text-primary" /><h3 className="mt-3 font-semibold">{item.label}</h3><p className="mt-1 text-sm text-muted-foreground">{item.note}</p></Link>)}
-        </div>
-      </section>
+      <section><div className="mb-4"><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">तुमचे अभ्यास साधन</p><h2 className="mt-1 font-serif text-2xl font-semibold">पुढे काय करायचे?</h2></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[{ to: '/study-plan', icon: 'CalendarDays', label: 'अभ्यास नियोजन', note: 'आजचा आणि आठवड्याचा प्लॅन' }, { to: '/practice', icon: 'ClipboardCheck', label: 'सराव प्रश्न', note: 'प्रकाशित MCQ सोडवा' }, { to: '/revision', icon: 'Brain', label: 'उजळणी', note: 'विसरण्यापूर्वी पुन्हा शिका' }, { to: '/tutor', icon: 'MessageCircle', label: 'AI अभ्यास मार्गदर्शक', note: 'कठीण संकल्पना समजून घ्या' }].map((item) => <Link key={item.to} to={item.to} className="group rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"><ApperIcon name={item.icon} size={21} className="text-primary" /><h3 className="mt-3 font-semibold">{item.label}</h3><p className="mt-1 text-sm text-muted-foreground">{item.note}</p></Link>)}</div></section>
     </div>
   );
 }
