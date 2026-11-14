@@ -64,15 +64,33 @@ function LinkList({ items }) {
   );
 }
 
+const MAHARASHTRA_EXAMS = [
+  'MPSC Rajyaseva',
+  'MPSC Combined Group B',
+  'MPSC Combined Group C',
+  'MPSC Forest Services',
+  'MPSC Engineering Services',
+  'MPSC Agriculture Services',
+  'MPSC Law Services',
+  'Maharashtra Police Sub-Inspector (PSI)',
+  'Maharashtra Police Constable',
+  'Maharashtra State Tax Inspector (STI)',
+  'Maharashtra ASO (Assistant Section Officer)',
+  'Talathi Bharti Maharashtra',
+  'Maharashtra Gram Sevak',
+  'Maharashtra Zilla Parishad Bharti',
+];
+
 function LiveExamContent() {
   const [selectedExam, setSelectedExam] = useState(null);
   const { data: exams, loading: examsLoading, error: examsError } = useFetch(fetchPublishedExams, []);
   const { invoke, loading, data: response } = useFunction(import.meta.env.VITE_FETCH_EXAM_CONTENT);
   const content = response?.success ? response.data : null;
+  const examNames = [...new Set([...(exams ?? []).map((exam) => exam.Name).filter(Boolean), ...MAHARASHTRA_EXAMS])];
 
-  const handleSelect = (exam) => {
-    setSelectedExam(exam.Name);
-    invoke({ examName: exam.Name });
+  const handleSelect = (name) => {
+    setSelectedExam(name);
+    invoke({ examName: name });
   };
 
   return (
@@ -84,22 +102,19 @@ function LiveExamContent() {
 
       {examsLoading && <p className="text-sm text-muted-foreground">परीक्षा यादी लोड होत आहे...</p>}
       {examsError && <p className="text-sm text-warning-foreground">{examsError}</p>}
-      {!examsLoading && !examsError && (exams ?? []).length === 0 && (
-        <p className="text-sm text-muted-foreground">अजून कोणतीही परीक्षा प्रकाशित नाही.</p>
-      )}
 
       <div className="flex flex-wrap gap-2">
-        {(exams ?? []).map((exam) => (
+        {examNames.map((name) => (
           <button
-            key={exam.Id}
+            key={name}
             type="button"
-            onClick={() => handleSelect(exam)}
+            onClick={() => handleSelect(name)}
             disabled={loading}
             className={`rounded-full border px-3 py-1.5 text-sm font-semibold transition hover:bg-secondary disabled:pointer-events-none disabled:opacity-50 ${
-              selectedExam === exam.Name ? 'border-primary bg-secondary text-primary' : 'border-border'
+              selectedExam === name ? 'border-primary bg-secondary text-primary' : 'border-border'
             }`}
           >
-            {exam.Name}
+            {name}
           </button>
         ))}
       </div>
