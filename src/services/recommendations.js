@@ -5,7 +5,9 @@ const PLAN_DAYS = 5;
 const DEFAULT_DAILY_GOAL = 120;
 
 export function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 export function addDays(iso, days) {

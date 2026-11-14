@@ -45,7 +45,7 @@ async function fetchCoachData() {
 export default function StudyCoach() {
   const [savingPlan, setSavingPlan] = useState(false);
   const [coachReply, setCoachReply] = useState('');
-  const { invoke, loading: coachLoading } = useFunction(import.meta.env.VITE_TUTOR_REPLY);
+  const { invoke, loading: coachLoading } = useFunction(import.meta.env.VITE_TUTOR_REPLY, { showError: false });
   const { data, loading, error, run } = useFetch(fetchCoachData, []);
 
   const attempts = data?.attempts ?? [];
