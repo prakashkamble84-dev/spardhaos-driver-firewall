@@ -1,5 +1,7 @@
 import apper from 'https://cdn.apper.io/actions/apper-actions.js';
 
+const UPSTREAM_TIMEOUT_MS = 6000;
+
 const UPSTREAM_HEADERS = {
   'User-Agent': 'SpardhaOS/1.0 (Maharashtra exam study app)',
   Accept: 'application/json',
@@ -12,7 +14,10 @@ const json = (status, body) =>
   });
 
 async function getJson(url) {
-  const res = await fetch(url, { headers: UPSTREAM_HEADERS, signal: AbortSignal.timeout(6000) });
+  const res = await fetch(url, {
+    headers: UPSTREAM_HEADERS,
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+  });
   if (!res.ok) throw new Error(`Upstream responded ${res.status}`);
   return res.json();
 }
