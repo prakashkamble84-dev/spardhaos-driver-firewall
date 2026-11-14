@@ -33,21 +33,18 @@ async function wikipediaOverview(lang, query) {
   };
 }
 
-async function aiStudySummary(apiKey, examName, sources) {
+async function geminiSummary(apiKey, examName, sources) {
   const context = sources
     .filter(Boolean)
     .map((s) => `${s.title}: ${s.extract}`)
     .join('\n\n')
     .slice(0, 8000);
-  const prompt = `You are a study assistant for Maharashtra competitive exams. Using only the source text below, write a concise study overview of "${examName}" in Marathi (3-5 short bullet points covering purpose, eligibility-level, and key subjects). If the sources are insufficient, say so briefly. Do not invent facts.\n\nSources:\n${context || 'No sources found.'}`;
-  const res = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-    },
-  );
+  const prompt = `You are a study assistant for Maharashtra competitive exams. Using only the source text below, write a concise study overview of "${examName}" in simple Marathi (Devanagari). Use short bullet points covering eligibility, exam pattern, and key subjects. If the sources are insufficient, say so briefly.\n\nSOURCES:\n${context || 'No sources found.'}`;
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+  });
   if (!res.ok) throw new Error(`Gemini responded ${res.status}`);
   const payload = await res.json();
   return payload?.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim() || null;
@@ -98,12 +95,13 @@ apper.serve(async (req) => {
     data.warning = `"${encoded}" विषयी विकिपीडियावर माहिती सापडली नाही; खालील अधिकृत व शोध दुवे वापरा.`;
   }
 
-  try {
-    const apiKey = await apper.getSecret('GOOGLE_API_KEY');
-    data.aiSummary = apiKey ? await aiStudySummary(apiKey, examName, [en, mr]) : null;
-  } catch (error) {
-    console.info(`apper_info: Got this error in this function: fetch-exam-content. The error is: ${error.message}`);
-    data.aiSummary = null;
+  const apiKey = await apper.getSecret('GOOGLE_API_KEY').catch(() => null);
+  if (apiKey && (en || mr)) {
+    try {
+      data.aiSummary = await geminiSummary(apiKey, examName, [en, mr]);
+    } catch (error) {
+      console.info(`apper_info: Gemini summary failed. The error is: ${error.message}`);
+    }
   }
 
   return json(200, { success: true, data });
