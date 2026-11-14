@@ -2,6 +2,12 @@ import { sdk } from '@/services/sdk';
 
 const MAX_MESSAGE_LENGTH = 2000;
 
+function redact(text) {
+  return String(text)
+    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '[email]')
+    .replace(/(?:\+?\d[\d\s-]{8,}\d)/g, '[number]');
+}
+
 export async function logPageView(pagePath, durationSeconds) {
   const path = pagePath || '/';
   try {
@@ -19,7 +25,7 @@ export async function logPageView(pagePath, durationSeconds) {
 }
 
 export async function logClientError(message, pagePath) {
-  const text = String(message || 'Unknown error').slice(0, MAX_MESSAGE_LENGTH);
+  const text = redact(message || 'Unknown error').slice(0, MAX_MESSAGE_LENGTH);
   try {
     const res = await sdk.table('error_logs_c').create({
       Name: text.slice(0, 80),
