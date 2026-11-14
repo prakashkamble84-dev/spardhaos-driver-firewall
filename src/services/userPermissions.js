@@ -43,6 +43,10 @@ const TABLE_PERMISSIONS = {
     enrollment_codes_c: { access: 'Full' },
     institution_batches_c: { access: 'Full' },
     institution_batch_members_c: { access: 'Full' },
+    notifications_c: { access: 'Full' },
+    notification_preferences_c: { access: 'Full' },
+    notification_templates_c: { access: 'Full' },
+    announcements_c: { access: 'Full' },
   },
   Student_c: {
     student_profiles_c: { access: 'Read,Create,Update,Delete' },
@@ -67,6 +71,9 @@ const TABLE_PERMISSIONS = {
     institutions_c: { access: 'Read' },
     institution_memberships_c: { access: 'Read' },
     institution_batch_members_c: { access: 'Read' },
+    notifications_c: { access: 'Read,Create,Update' },
+    notification_preferences_c: { access: 'Read,Create,Update' },
+    notification_templates_c: { access: 'Read' },
   },
 };
 
