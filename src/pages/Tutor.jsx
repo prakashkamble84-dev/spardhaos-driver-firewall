@@ -15,7 +15,8 @@ export default function Tutor() {
     const trimmed = question.trim();
     if (!trimmed || loading) return;
     const result = await invoke({ question: trimmed });
-    if (!result?.success || !result.data?.answer) {
+    if (!result) return;
+    if (!result.success || !result.data?.answer) {
       toast.error('उत्तर मिळवता आले नाही. कृपया पुन्हा प्रयत्न करा.');
       return;
     }
