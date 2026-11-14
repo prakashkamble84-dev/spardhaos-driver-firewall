@@ -1,7 +1,20 @@
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useFetch } from '@/hooks/useFetch';
 import { sdk } from '@/services/sdk';
+import { toast } from 'sonner';
 import ApperIcon from '@/components/ApperIcon';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
 
 export const route = { path: '/study-items/:id', layout: 'owner', access: 'authenticated' };
 
@@ -15,20 +28,26 @@ async function fetchItem(id) {
 export default function StudyItemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
   const { data: item, loading, error, run } = useFetch(() => fetchItem(id), [id]);
 
   async function removeItem() {
-    if (!item || !window.confirm(`“${item.Name}” ही नोंद हटवायची आहे का? ही कृती पूर्ववत करता येणार नाही.`)) return;
-    const result = await sdk.table('study_items_c').remove({ Id: item.Id });
-    if (!result.data?.length) {
-      window.alert(result.messages?.[0] || 'नोंद हटवता आली नाही.');
-      return;
+    if (!item) return;
+    setDeleting(true);
+    try {
+      const result = await sdk.table('study_items_c').remove({ Id: item.Id });
+      if (!result.data?.length) throw new Error(result.messages?.[0] || 'नोंद हटवता आली नाही.');
+      toast.success('नोंद हटवली.');
+      navigate('/study-plan');
+    } catch (err) {
+      toast.error(err.message || 'नोंद हटवताना त्रुटी आली.');
+    } finally {
+      setDeleting(false);
     }
-    navigate('/study-plan');
   }
 
   if (loading) return <p className="py-12 text-center text-muted-foreground">नोंद लोड होत आहे...</p>;
-  if (error) return <div className="space-y-3"><Link to="/study-plan" className="text-sm font-bold text-primary">← अभ्यास प्लॅनकडे परत</Link><p role="alert" className="rounded-lg bg-warning-muted p-4 text-warning-foreground">{error.message}</p><button onClick={run} className="font-bold text-primary underline">पुन्हा प्रयत्न करा</button></div>;
+  if (error) return <div className="space-y-3"><Link to="/study-plan" className="text-sm font-bold text-primary">← अभ्यास प्लॅनकडे परत</Link><p role="alert" className="rounded-lg bg-warning-muted p-4 text-warning-foreground">{error}</p><button onClick={run} className="font-bold text-primary underline">पुन्हा प्रयत्न करा</button></div>;
   if (!item) return <div className="space-y-3"><Link to="/study-plan" className="text-sm font-bold text-primary">← अभ्यास प्लॅनकडे परत</Link><h1 className="text-2xl font-semibold">नोंद सापडली नाही</h1></div>;
 
   return (
@@ -51,7 +70,21 @@ export default function StudyItemDetail() {
         </dl>
         <div className="mt-7 flex flex-wrap gap-3 border-t border-border pt-5">
           <Link to={`/study-items/${item.Id}/edit`} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground"><ApperIcon name="Pencil" size={16} /> संपादित करा</Link>
-          <button onClick={removeItem} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-destructive/40 px-4 text-sm font-bold text-destructive"><ApperIcon name="Trash2" size={16} /> हटवा</button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button disabled={deleting} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-destructive/40 px-4 text-sm font-bold text-destructive"><ApperIcon name="Trash2" size={16} /> हटवा</button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>ही नोंद हटवायची आहे?</AlertDialogTitle>
+                <AlertDialogDescription>“{item.Name}” ही नोंद कायमची हटवली जाईल. ही कृती पूर्ववत करता येणार नाही.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>रद्द करा</AlertDialogCancel>
+                <AlertDialogAction onClick={removeItem} disabled={deleting}>होय, हटवा</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
