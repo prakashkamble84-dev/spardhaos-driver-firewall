@@ -84,7 +84,7 @@ const MAHARASHTRA_EXAMS = [
 function LiveExamContent() {
   const [selectedExam, setSelectedExam] = useState(null);
   const { data: exams, loading: examsLoading, error: examsError } = useFetch(fetchPublishedExams, []);
-  const { invoke, loading, data: response } = useFunction(import.meta.env.VITE_FETCH_EXAM_CONTENT);
+  const { invoke, loading, data: response, error: lookupError } = useFunction(import.meta.env.VITE_FETCH_EXAM_CONTENT);
   const content = response?.success ? response.data : null;
   const examNames = [...new Set([...(exams ?? []).map((exam) => exam.Name).filter(Boolean), ...MAHARASHTRA_EXAMS])];
 
@@ -120,6 +120,7 @@ function LiveExamContent() {
       </div>
 
       {loading && <p className="text-sm text-muted-foreground">थेट माहिती शोधत आहे...</p>}
+      {!loading && lookupError && <p className="text-sm text-warning-foreground">थेट माहिती मिळवता आली नाही. कृपया पुन्हा प्रयत्न करा.</p>}
 
       {content && !loading && (
         <div className="space-y-5 border-t border-border pt-4">
