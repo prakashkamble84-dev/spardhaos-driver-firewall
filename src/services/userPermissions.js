@@ -38,6 +38,7 @@ const TABLE_PERMISSIONS = {
     subscription_plans_c: { access: 'Full' },
     subscriptions_c: { access: 'Full' },
     payments_c: { access: 'Full' },
+    institutions_c: { access: 'Full' },
   },
   Student_c: {
     student_profiles_c: { access: 'Read,Create,Update,Delete' },
@@ -59,6 +60,7 @@ const TABLE_PERMISSIONS = {
     subscription_plans_c: { access: 'Read' },
     subscriptions_c: { access: 'Read' },
     payments_c: { access: 'Read' },
+    institutions_c: { access: 'Read' },
   },
 };
 
