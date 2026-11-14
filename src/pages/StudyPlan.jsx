@@ -86,6 +86,7 @@ export default function StudyPlan() {
       const payload = {
         ...values,
         Name: values.Name.trim(),
+        target_date_c: values.target_date_c || null,
         daily_goal_minutes_c: Number(values.daily_goal_minutes_c) || 0,
       };
       const result = plan
