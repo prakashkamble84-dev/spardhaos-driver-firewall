@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFetch } from '@/hooks/useFetch';
 import { useFunction } from '@/hooks/useFunction';
 import { sdk } from '@/services/sdk';
@@ -81,11 +81,43 @@ const MAHARASHTRA_EXAMS = [
   'Maharashtra Zilla Parishad Bharti',
 ];
 
+const LIVE_CACHE_KEY = 'spardhaos.liveExamCache.v1';
+
+function readLiveCache() {
+  try {
+    return JSON.parse(window.localStorage.getItem(LIVE_CACHE_KEY)) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+function writeLiveCache(cache) {
+  try {
+    window.localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // Storage can be unavailable (private mode, quota); the live lookup still works without the offline copy.
+  }
+}
+
 function LiveExamContent() {
   const [selectedExam, setSelectedExam] = useState(null);
+  const [cache, setCache] = useState(readLiveCache);
   const { data: exams, loading: examsLoading, error: examsError } = useFetch(fetchPublishedExams, []);
   const { invoke, loading, data: response, error: lookupError } = useFunction(import.meta.env.VITE_FETCH_EXAM_CONTENT);
-  const content = response?.success ? response.data : null;
+  const liveContent = !loading && !lookupError && response?.success && response.data?.examName === selectedExam ? response.data : null;
+  const cachedContent = !liveContent && selectedExam ? cache[selectedExam] ?? null : null;
+  const content = liveContent ?? cachedContent;
+  const isCached = !liveContent && Boolean(cachedContent);
+
+  useEffect(() => {
+    if (!response?.success || !response.data?.examName) return;
+    const examName = response.data.examName;
+    setCache((previous) => {
+      const next = { ...previous, [examName]: response.data };
+      writeLiveCache(next);
+      return next;
+    });
+  }, [response]);
   const examNames = [...new Set([...(exams ?? []).map((exam) => exam.Name).filter(Boolean), ...MAHARASHTRA_EXAMS])];
 
   const handleSelect = (name) => {
@@ -125,6 +157,7 @@ function LiveExamContent() {
       {content && !loading && (
         <div className="space-y-5 border-t border-border pt-4">
           {content.warning && <p className="rounded-lg bg-warning-muted p-3 text-sm text-warning-foreground">{content.warning}</p>}
+          {isCached && <p className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">थेट स्रोत उपलब्ध नाही; शेवटची यशस्वी माहिती दाखवत आहे.</p>}
 
           {(content.overview || content.marathiOverview) && (
             <div className="grid gap-4 md:grid-cols-2">
