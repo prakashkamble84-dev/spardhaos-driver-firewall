@@ -35,6 +35,9 @@ const TABLE_PERMISSIONS = {
     mock_tests_c: { access: 'Full' },
     current_affairs_c: { access: 'Full' },
     exam_notifications_c: { access: 'Full' },
+    subscription_plans_c: { access: 'Full' },
+    subscriptions_c: { access: 'Full' },
+    payments_c: { access: 'Full' },
   },
   Student_c: {
     student_profiles_c: { access: 'Read,Create,Update,Delete' },
@@ -53,6 +56,9 @@ const TABLE_PERMISSIONS = {
     mock_tests_c: { access: 'Read' },
     current_affairs_c: { access: 'Read' },
     exam_notifications_c: { access: 'Read' },
+    subscription_plans_c: { access: 'Read' },
+    subscriptions_c: { access: 'Read' },
+    payments_c: { access: 'Read' },
   },
 };
 
