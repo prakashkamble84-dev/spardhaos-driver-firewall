@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { useFetch } from '@/hooks/useFetch';
 import { sdk } from '@/services/sdk';
 import { Link } from 'react-router-dom';
@@ -28,6 +30,21 @@ async function countRows(table) {
   return res.total ?? 0;
 }
 
+const RETENTION_DAYS = 7;
+const RETENTION_TABLES = ['feedback_c', 'error_logs_c'];
+
+async function purgeExpired(table) {
+  const { lt } = window.ApperSDK.CoreSDK;
+  const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 19);
+  const found = await sdk.table(table).select(['Id']).where(lt('CreatedOn', cutoff)).page(1, 500).fetch();
+  if (!found.success) throw new Error(found.message || `${table} could not be loaded.`);
+  const ids = (found.data ?? []).map((row) => row.Id);
+  if (!ids.length) return 0;
+  const res = await sdk.table(table).remove(ids);
+  if (!res.data?.length) throw new Error(res.messages?.[0] || `${table} could not be cleaned up.`);
+  return res.data.length;
+}
+
 async function fetchMetrics() {
   const counts = await Promise.all(METRICS.map((metric) => countRows(metric.table)));
   return Object.fromEntries(METRICS.map((metric, index) => [metric.key, counts[index]]));
@@ -35,6 +52,22 @@ async function fetchMetrics() {
 
 export default function Admin() {
   const { data: metrics, loading, error, run } = useFetch(fetchMetrics, []);
+  const [purging, setPurging] = useState(false);
+
+  async function purge() {
+    setPurging(true);
+    try {
+      let removed = 0;
+      for (const table of RETENTION_TABLES) removed += await purgeExpired(table);
+      toast.success(`Removed ${removed} records older than ${RETENTION_DAYS} days.`);
+      run();
+    } catch (err) {
+      toast.error(err.message);
+      console.error(`retention purge failed: ${err.message}`);
+    } finally {
+      setPurging(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -51,6 +84,14 @@ export default function Admin() {
           className="min-h-11 shrink-0 rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-accent disabled:opacity-50"
         >
           Refresh
+        </button>
+        <button
+          type="button"
+          onClick={purge}
+          disabled={purging}
+          className="min-h-11 shrink-0 rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-accent disabled:opacity-50"
+        >
+          {purging ? 'Cleaning up...' : `Delete records older than ${RETENTION_DAYS} days`}
         </button>
       </div>
 
