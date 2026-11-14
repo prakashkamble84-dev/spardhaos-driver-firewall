@@ -67,7 +67,8 @@ function LinkList({ items }) {
 function LiveExamContent() {
   const [selectedExam, setSelectedExam] = useState(null);
   const { data: exams, loading: examsLoading, error: examsError } = useFetch(fetchPublishedExams, []);
-  const { invoke, loading, data: content } = useFunction(import.meta.env.VITE_FETCH_EXAM_CONTENT);
+  const { invoke, loading, data: response } = useFunction(import.meta.env.VITE_FETCH_EXAM_CONTENT);
+  const content = response?.success ? response.data : null;
 
   const handleSelect = (exam) => {
     setSelectedExam(exam.Name);
