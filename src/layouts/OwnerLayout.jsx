@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useOwnerLayoutData } from '@/hooks/useOwnerLayoutData';
 import UserMenu from '@/components/UserMenu';
 import ApperIcon from '@/components/ApperIcon';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { cn } from '@/lib/utils';
 
 export default function OwnerLayout() {
@@ -24,15 +25,10 @@ export default function OwnerLayout() {
           <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">तयारी</p>
           <nav className="space-y-1">
             {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/'}
-                className={({ isActive }) => cn(
-                  'flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
+              <NavLink key={item.path} to={item.path} end={item.path === '/'} className={({ isActive }) => cn(
+                'flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+              )}>
                 <ApperIcon name={item.icon || 'Circle'} size={18} />
                 <span>{item.label}</span>
               </NavLink>
@@ -59,7 +55,7 @@ export default function OwnerLayout() {
           <UserMenu />
         </header>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <Outlet />
+          <ErrorBoundary><Outlet /></ErrorBoundary>
         </div>
       </main>
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card/95 px-1 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur md:hidden">

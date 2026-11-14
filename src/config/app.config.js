@@ -1,35 +1,21 @@
 /**
- * app.config.js — APP IDENTITY & AUTH CONFIG
- *
- * Branding, theme, and auth configuration only.
- * Routes are self-declared by each page (export const route).
- * Nav items are self-declared by each page (export const nav).
- * Tables are auto-discovered from mockData/*.json files.
+ * SpardhaOS identity and authentication configuration.
  */
-
 export const APP_CONFIG = {
-  name: 'MyApp',
-  tagline: 'Your app tagline here',
-  emoji: '🚀',
-  icon: 'Box',
-
-  defaultTheme: 'system',
+  name: 'SpardhaOS',
+  tagline: 'तुमचा अभ्यास. तुमचा प्लॅन. तुमची प्रगती.',
+  emoji: '📚',
+  icon: 'BookOpenCheck',
+  defaultTheme: 'light',
   defaultLoginRoute: '/login',
 };
 
-/**
- * Per-role auth routes and copy.
- * null when the app has no distinct profiles (uses GENERIC_AUTH instead).
- */
 export const AUTH_PROFILES = null;
 
-/**
- * Fallback auth copy when AUTH_PROFILES is null or URL profile doesn't match.
- */
 export const GENERIC_AUTH = {
-  loginTitle: 'Welcome back',
-  signupTitle: 'Create account',
-  loginDescription: null,
-  signupDescription: null,
-  redirectAfterAuth: '/dashboard',
+  loginTitle: 'SpardhaOS मध्ये पुन्हा स्वागत',
+  signupTitle: 'तुमचे मोफत खाते तयार करा',
+  loginDescription: 'तुमचा अभ्यास प्लॅन पुढे सुरू ठेवा.',
+  signupDescription: 'MPSC आणि महाराष्ट्रातील स्पर्धा परीक्षांची तयारी मराठीतून सुरू करा.',
+  redirectAfterAuth: '/',
 };
