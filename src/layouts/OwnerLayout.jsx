@@ -7,7 +7,7 @@ import UserMenu from '@/components/UserMenu';
 import ApperIcon from '@/components/ApperIcon';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { cn } from '@/lib/utils';
-import { logClientError, logPageView } from '@/services/appLog';
+import { captureGlobalErrors, logPageView } from '@/services/appLog';
 
 export default function OwnerLayout() {
   const { navItems, displayName, initials, user } = useOwnerLayoutData();
@@ -31,14 +31,7 @@ export default function OwnerLayout() {
   }, [pathname]);
 
   useEffect(() => {
-    const onError = (event) => logClientError(event.error?.message || event.message, window.location.pathname);
-    const onRejection = (event) => logClientError(event.reason?.message || String(event.reason), window.location.pathname);
-    window.addEventListener('error', onError);
-    window.addEventListener('unhandledrejection', onRejection);
-    return () => {
-      window.removeEventListener('error', onError);
-      window.removeEventListener('unhandledrejection', onRejection);
-    };
+    return captureGlobalErrors();
   }, []);
 
   return (

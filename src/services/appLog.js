@@ -1,6 +1,17 @@
 import { sdk } from '@/services/sdk';
 
 const MAX_MESSAGE_LENGTH = 2000;
+const DEDUPE_WINDOW_MS = 10000;
+const recentMessages = new Map();
+
+function isDuplicate(text) {
+  const now = Date.now();
+  const last = recentMessages.get(text);
+  if (last !== undefined && now - last < DEDUPE_WINDOW_MS) return true;
+  recentMessages.set(text, now);
+  if (recentMessages.size > 100) recentMessages.clear();
+  return false;
+}
 
 function redact(text) {
   return String(text)
@@ -26,6 +37,7 @@ export async function logPageView(pagePath, durationSeconds) {
 
 export async function logClientError(message, pagePath) {
   const text = redact(message || 'Unknown error').slice(0, MAX_MESSAGE_LENGTH);
+  if (isDuplicate(text)) return;
   try {
     const res = await sdk.table('error_logs_c').create({
       Name: text.slice(0, 80),
@@ -38,4 +50,25 @@ export async function logClientError(message, pagePath) {
   } catch (err) {
     console.error(`error_logs_c create threw: ${err.message}`);
   }
+}
+
+let captureInstalled = false;
+
+export function captureGlobalErrors() {
+  if (captureInstalled || typeof window === 'undefined') return () => {};
+  captureInstalled = true;
+  const onError = (event) => {
+    if (!(event instanceof ErrorEvent)) return;
+    logClientError(event.error?.message || event.message, window.location.pathname);
+  };
+  const onRejection = (event) => {
+    logClientError(event.reason?.message || String(event.reason), window.location.pathname);
+  };
+  window.addEventListener('error', onError);
+  window.addEventListener('unhandledrejection', onRejection);
+  return () => {
+    captureInstalled = false;
+    window.removeEventListener('error', onError);
+    window.removeEventListener('unhandledrejection', onRejection);
+  };
 }
