@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useFetch } from '@/hooks/useFetch';
 import { sdk } from '@/services/sdk';
 import ApperIcon from '@/components/ApperIcon';
@@ -31,13 +32,19 @@ export default function Revision() {
     setNotice('');
     try {
       const result = await sdk.table('revision_schedules_c').create({ ...form, Name: form.Name.trim(), interval_days_c: Number(form.interval_days_c) || 1 });
-      if (!result.data?.length) throw new Error(result.messages?.[0] || 'उजळणी नोंद जतन झाली नाही.');
+      if (!result.data?.length) {
+        const message = result.messages?.[0] || 'उजळणी नोंद जतन झाली नाही.';
+        toast.error(message);
+        console.error(`revision_schedules_c create failed: ${result.messages?.join('; ') || 'no rows committed'}`);
+        throw new Error(message);
+      }
       setForm({ Name: '', subject_c: 'इतिहास', topic_c: '', revision_date_c: new Date().toISOString().slice(0, 10), interval_days_c: '1', status_c: 'Due' });
       setShowForm(false);
       setNotice('उजळणी वेळापत्रकात जोडली.');
       await run();
     } catch (err) {
       setNotice(err.message || 'नोंद जतन करताना त्रुटी आली.');
+      if (!err.message) console.error(`revision_schedules_c create threw: ${err}`);
     } finally {
       setSaving(false);
     }
@@ -45,13 +52,21 @@ export default function Revision() {
 
   async function update(item, status) {
     setNotice('');
-    const result = await sdk.table('revision_schedules_c').update({ Id: item.Id, status_c: status });
-    if (!result.data?.length) {
-      setNotice(result.messages?.[0] || 'बदल जतन झाले नाहीत.');
-      return;
+    try {
+      const result = await sdk.table('revision_schedules_c').update({ Id: item.Id, status_c: status });
+      if (!result.data?.length) {
+        const message = result.messages?.[0] || 'बदल जतन झाले नाहीत.';
+        setNotice(message);
+        toast.error(message);
+        console.error(`revision_schedules_c update failed: ${result.messages?.join('; ') || 'no rows committed'}`);
+        return;
+      }
+      setNotice(status === 'Completed' ? 'उजळणी पूर्ण म्हणून नोंदवली.' : 'उजळणी पुढे ढकलली.');
+      await run();
+    } catch (err) {
+      toast.error('बदल जतन झाले नाहीत.');
+      console.error(`revision_schedules_c update threw: ${err.message}`);
     }
-    setNotice(status === 'Completed' ? 'उजळणी पूर्ण म्हणून नोंदवली.' : 'उजळणी पुढे ढकलली.');
-    await run();
   }
 
   return (

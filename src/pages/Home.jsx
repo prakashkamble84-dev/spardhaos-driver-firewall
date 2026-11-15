@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useFetch } from '@/hooks/useFetch';
 import { sdk } from '@/services/sdk';
 import ApperIcon from '@/components/ApperIcon';
@@ -61,11 +62,17 @@ export default function Home() {
         status_c: nextStatus,
       });
 
-      if (!result.data?.length) throw new Error(result.messages?.[0] || 'बदल जतन झाले नाहीत.');
+      if (!result.data?.length) {
+        const message = result.messages?.[0] || 'बदल जतन झाले नाहीत.';
+        toast.error(message);
+        console.error(`study_tasks_c update failed: ${result.messages?.join('; ') || 'no rows committed'}`);
+        throw new Error(message);
+      }
       setNotice(nextStatus === 'Done' ? 'काम पूर्ण म्हणून नोंदवले.' : 'काम पुन्हा बाकी म्हणून ठेवले.');
       await Promise.all([run(), reloadMetrics()]);
     } catch (err) {
       setNotice(err.message || 'काहीतरी चुकले. पुन्हा प्रयत्न करा.');
+      if (!err.message) console.error(`study_tasks_c update threw: ${err}`);
     }
   }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useFetch } from '@/hooks/useFetch';
 import { sdk } from '@/services/sdk';
 import ApperIcon from '@/components/ApperIcon';
@@ -29,26 +30,40 @@ export default function Mistakes() {
     setNotice('');
     try {
       const result = await sdk.table('mistake_records_c').create({ ...form, Name: form.Name.trim() });
-      if (!result.data?.length) throw new Error(result.messages?.[0] || 'चूक नोंद जतन झाली नाही.');
+      if (!result.data?.length) {
+        const message = result.messages?.[0] || 'चूक नोंद जतन झाली नाही.';
+        toast.error(message);
+        console.error(`mistake_records_c create failed: ${result.messages?.join('; ') || 'no rows committed'}`);
+        throw new Error(message);
+      }
       setForm({ Name: '', question_id_c: '', subject_c: 'इतिहास', topic_c: '', mistake_type_c: 'Concept', explanation_c: '', review_status_c: 'Open' });
       setShowForm(false);
       setNotice('चूक वहीत नोंद जोडली.');
       await run();
     } catch (err) {
       setNotice(err.message || 'नोंद जतन करताना त्रुटी आली.');
+      if (!err.message) console.error(`mistake_records_c create threw: ${err}`);
     } finally {
       setSaving(false);
     }
   }
 
   async function resolve(item) {
-    const result = await sdk.table('mistake_records_c').update({ Id: item.Id, review_status_c: 'Resolved' });
-    if (!result.data?.length) {
-      setNotice(result.messages?.[0] || 'बदल जतन झाले नाहीत.');
-      return;
+    try {
+      const result = await sdk.table('mistake_records_c').update({ Id: item.Id, review_status_c: 'Resolved' });
+      if (!result.data?.length) {
+        const message = result.messages?.[0] || 'बदल जतन झाले नाहीत.';
+        setNotice(message);
+        toast.error(message);
+        console.error(`mistake_records_c update failed: ${result.messages?.join('; ') || 'no rows committed'}`);
+        return;
+      }
+      setNotice('नोंद सुधारलेली म्हणून चिन्हांकित केली.');
+      await run();
+    } catch (err) {
+      toast.error('बदल जतन झाले नाहीत.');
+      console.error(`mistake_records_c update threw: ${err.message}`);
     }
-    setNotice('नोंद सुधारलेली म्हणून चिन्हांकित केली.');
-    await run();
   }
 
   return (
