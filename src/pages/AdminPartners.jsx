@@ -26,8 +26,19 @@ function writeSucceeded(res, label) {
   if (res.messages.length) {
     toast.error(res.messages[0], { description: res.messages.slice(1).join('\n') || undefined, duration: 8000 });
     console.error(`${label} failed: ${res.messages.join('; ')}`);
+    return false;
   }
-  return res.data.length > 0 && !res.partial;
+  if (!res.data.length) {
+    toast.error(`${label} could not be saved.`);
+    console.error(`${label} failed: no rows were committed`);
+    return false;
+  }
+  if (res.partial) {
+    toast.warning('Only part of the change was saved. Refresh and check the list.');
+    console.error(`${label} partial: ${res.data.length} of ${res.results.length} rows committed`);
+    return false;
+  }
+  return true;
 }
 
 async function fetchPartners() {
