@@ -45,12 +45,7 @@ apper.serve(async (req) => {
     return json(502, { success: false, message: `AI service responded ${res.status}` });
   }
 
-  let payload;
-  try {
-    payload = await res.json();
-  } catch {
-    return json(502, { success: false, message: 'AI service returned an invalid response' });
-  }
+  const payload = await res.json().catch(() => null);
   const answer = payload?.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim();
   if (!answer) {
     return json(502, { success: false, message: 'AI service returned no answer' });
